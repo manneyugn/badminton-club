@@ -1,65 +1,59 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { getPlayers } from '@/services/playerService'
 
-export default function Home() {
+export const revalidate = 60
+
+export default async function LeaderboardPage() {
+  const players = await getPlayers()
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="py-6">
+      <h1 className="text-2xl font-bold mb-1">Rankings</h1>
+      <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
+        {players.length} players
+      </p>
+
+      {players.length === 0 ? (
+        <p className="text-center py-16" style={{ color: 'var(--muted)' }}>
+          No players yet.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {players.map((p, i) => {
+            const winRate = p.sets_played > 0
+              ? Math.round((p.wins / p.sets_played) * 100)
+              : 0
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+
+            return (
+              <Link key={p.player_id} href={`/players/${p.player_id}`}>
+                <div className="flex items-center gap-3 p-3 rounded-xl"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <div className="w-7 text-center text-sm font-mono" style={{ color: 'var(--muted)' }}>
+                    {medal ?? `#${i + 1}`}
+                  </div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                    style={{ background: '#14532d', color: 'var(--accent)' }}>
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate">{p.name}</div>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {p.sets_played} sets · {p.wins}W {p.losses}L · {winRate}%
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-bold text-lg" style={{ color: 'var(--accent)' }}>
+                      {Math.round(p.elo)}
+                    </div>
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>ELO</div>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
     </div>
-  );
+  )
 }
