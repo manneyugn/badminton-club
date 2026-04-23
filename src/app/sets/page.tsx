@@ -2,8 +2,6 @@ import { findAllSets } from '@/lib/sheets/repository'
 import { findAllPlayers } from '@/lib/sheets/repository'
 import SetHistoryList from '@/components/SetHistoryList'
 
-export const revalidate = 30
-
 export default async function SetsPage() {
   const [sets, players] = await Promise.all([findAllSets(), findAllPlayers()])
   const playerMap = Object.fromEntries(players.map(p => [p.player_id, p.name]))

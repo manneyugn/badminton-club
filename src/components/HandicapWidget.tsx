@@ -2,8 +2,10 @@
 import { useState } from 'react'
 import type { PlayerRow, HandicapResult } from '@/types'
 import PlayerSelect from './PlayerSelect'
+import { usePlayers } from '@/hooks/usePlayers'
 
-export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
+export default function HandicapWidget({ players: initialPlayers }: { players: PlayerRow[] }) {
+  const { players } = usePlayers(initialPlayers)
   const [matchType, setMatchType] = useState<'singles' | 'doubles'>('singles')
   const [gamePoints, setGamePoints] = useState<15 | 21>(21)
   const [pA, setPA] = useState('')

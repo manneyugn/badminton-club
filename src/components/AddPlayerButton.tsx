@@ -1,11 +1,17 @@
 'use client'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import type { PlayerRow } from '@/types'
+import { usePlayers } from '@/hooks/usePlayers'
 
-export default function AddPlayerButton({ adminEmails }: { adminEmails: string[] }) {
+interface Props {
+  adminEmails: string[]
+  initialPlayers: PlayerRow[]
+}
+
+export default function AddPlayerButton({ adminEmails, initialPlayers }: Props) {
   const { data: session } = useSession()
-  const router = useRouter()
+  const { players, refresh } = usePlayers(initialPlayers)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -30,7 +36,7 @@ export default function AddPlayerButton({ adminEmails }: { adminEmails: string[]
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       setOpen(false)
       setName('')
-      router.refresh()
+      await refresh()   // re-fetch fresh player list from API
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
     } finally {
@@ -46,6 +52,11 @@ export default function AddPlayerButton({ adminEmails }: { adminEmails: string[]
         + Add Player
       </button>
 
+      {/* Live player count updates after adding */}
+      <p className="text-xs text-center mt-1" style={{ color: 'var(--muted)' }}>
+        {players.length} players
+      </p>
+
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.6)' }}
@@ -53,7 +64,6 @@ export default function AddPlayerButton({ adminEmails }: { adminEmails: string[]
           <div className="w-full max-w-lg rounded-2xl p-6 flex flex-col gap-4"
             style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <h2 className="text-lg font-bold">Add Player</h2>
-
             <input
               type="text"
               placeholder="Player name"
@@ -64,9 +74,7 @@ export default function AddPlayerButton({ adminEmails }: { adminEmails: string[]
               className="w-full p-3 rounded-xl text-sm"
               style={{ background: 'var(--border)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
             />
-
             {error && <p className="text-sm text-red-400">{error}</p>}
-
             <div className="flex gap-2">
               <button onClick={() => { setOpen(false); setName('') }}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold"

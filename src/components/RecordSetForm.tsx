@@ -4,13 +4,15 @@ import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { PlayerRow } from '@/types'
 import PlayerSelect from './PlayerSelect'
+import { usePlayers } from '@/hooks/usePlayers'
 
 const btn = (active: boolean) =>
   `flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${active ? 'text-black' : 'opacity-50'}`
 
-export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
+export default function RecordSetForm({ players: initialPlayers }: { players: PlayerRow[] }) {
   const { data: session } = useSession()
   const router = useRouter()
+  const { players, refresh } = usePlayers(initialPlayers)
 
   const [matchType, setMatchType] = useState<'singles' | 'doubles'>('singles')
   const [gamePoints, setGamePoints] = useState<15 | 21>(21)
@@ -63,8 +65,8 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
       setTeamB(['', ''])
       setScoreA('')
       setScoreB('')
+      await refresh()
       router.push('/sets')
-      router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
     } finally {
