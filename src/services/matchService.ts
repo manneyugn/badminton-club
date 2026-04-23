@@ -47,8 +47,8 @@ export async function recordSet(input: RecordSetInput): Promise<RecordSetResult>
     const now = new Date().toISOString()
     const eloHistoryRows: EloHistoryRow[] = []
 
-    const updatePlayer = (player: PlayerRow, s: number, e: number, won: boolean): PlayerRow => {
-      const newElo = computeNewElo(player.elo, e, s, player.sets_played, won)
+    const updatePlayer = (player: PlayerRow, s: number, e: number, won: boolean, oppElo: number): PlayerRow => {
+      const newElo = computeNewElo(player.elo, e, s, player.sets_played, won, oppElo)
       eloUpdates.push({ player_id: player.player_id, elo_before: player.elo, elo_after: newElo, delta: newElo - player.elo })
       eloHistoryRows.push({
         event_id: uuidv4(),
@@ -69,8 +69,8 @@ export async function recordSet(input: RecordSetInput): Promise<RecordSetResult>
     }
 
     const wonA = input.winner === 'team_a'
-    const updatedA = teamA.map(p => updatePlayer(p, sA, pA, wonA))
-    const updatedB = teamB.map(p => updatePlayer(p, sB, pB, !wonA))
+    const updatedA = teamA.map(p => updatePlayer(p, sA, pA, wonA, eloB))
+    const updatedB = teamB.map(p => updatePlayer(p, sB, pB, !wonA, eloA))
 
     const setRow: SetRow = {
       set_id: input.set_id,

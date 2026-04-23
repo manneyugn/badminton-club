@@ -27,8 +27,8 @@ export function computeHandicap(
   if (eloDiff > 5) favored_side = eloA > eloB ? 'A' : 'B'
 
   let confidence: HandicapResult['confidence'] = 'high'
-  if (setsA < 20 || setsB < 20) confidence = 'low'
-  else if (Math.abs(setsA - setsB) > 40) confidence = 'medium'
+  if (setsA < 5 || setsB < 5) confidence = 'low'
+  else if (Math.abs(setsA - setsB) > 10) confidence = 'medium'
 
   return {
     handicap: practical,

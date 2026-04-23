@@ -1,12 +1,22 @@
-const K_PROVISIONAL = 40  // < 20 sets
-const K_DEVELOPING = 32   // 20–59 sets
-const K_ESTABLISHED = 24  // 60+ sets
-const SCORE_ALPHA = 0.3   // blend weight: 70% win/loss, 30% point margin
+const K_PROVISIONAL = 40  // < 5 sets
+const K_DEVELOPING = 32   // 5–9 sets
+const K_ESTABLISHED = 24  // 10+ sets
+const SCORE_ALPHA = 0.6   // blend weight: 40% win/loss, 60% point margin
 
 export function getKFactor(setsPlayed: number): number {
-  if (setsPlayed < 20) return K_PROVISIONAL
-  if (setsPlayed < 60) return K_DEVELOPING
+  if (setsPlayed < 5) return K_PROVISIONAL
+  if (setsPlayed < 10) return K_DEVELOPING
   return K_ESTABLISHED
+}
+
+// Scale K up when the ELO gap is large so mismatched matches still move ratings meaningfully.
+// Gap 0–99: 1×, 100–199: 1.3×, 200–349: 1.7×, 350+: 2.2×
+export function gapMultiplier(eloDiff: number): number {
+  const gap = Math.abs(eloDiff)
+  if (gap >= 350) return 2.2
+  if (gap >= 200) return 1.7
+  if (gap >= 100) return 1.3
+  return 1.0
 }
 
 // Cap at 0.95/0.05 so extreme gaps don't cause winners to lose ELO
@@ -38,9 +48,10 @@ export function computeNewElo(
   expectedScore: number,
   actualScore: number,
   setsPlayed: number,
-  won: boolean
+  won: boolean,
+  opponentElo: number = rating
 ): number {
-  const k = getKFactor(setsPlayed)
+  const k = getKFactor(setsPlayed) * gapMultiplier(rating - opponentElo)
   const raw = k * (actualScore - expectedScore)
   // Guarantee: a win always gains at least +0.5, a loss always loses at least -0.5
   const delta = won ? Math.max(0.5, raw) : Math.min(-0.5, raw)
