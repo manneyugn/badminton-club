@@ -1,6 +1,5 @@
-import { findAllSets } from '@/lib/sheets/repository'
-import { findAllPlayers } from '@/lib/sheets/repository'
-import SetHistoryList from '@/components/SetHistoryList'
+import { findAllSets, findAllPlayers } from '@/lib/sheets/repository'
+import SetsPageClient from '@/components/SetsPageClient'
 
 export default async function SetsPage() {
   const [sets, players] = await Promise.all([findAllSets(), findAllPlayers()])
@@ -10,10 +9,7 @@ export default async function SetsPage() {
   return (
     <div className="py-6">
       <h1 className="text-2xl font-bold mb-1">History</h1>
-      <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
-        {confirmed.length} sets recorded
-      </p>
-      <SetHistoryList sets={confirmed} playerMap={playerMap} />
+      <SetsPageClient initialSets={confirmed} playerMap={playerMap} />
     </div>
   )
 }
