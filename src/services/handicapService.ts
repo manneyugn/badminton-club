@@ -20,7 +20,8 @@ export function computeHandicap(
   const maxHandicap = gamePoints * MAX_HANDICAP_RATIO
   const raw = (pStrong - 0.5) * 2 * gamePoints
   const capped = Math.min(raw, maxHandicap)
-  const practical = Math.round(capped * 2) / 2  // nearest 0.5
+  const rounded = Math.round(capped * 2) / 2
+  const practical = capped >= 2 ? Math.max(2.5, rounded) : 0
 
   let favored_side: HandicapResult['favored_side'] = 'equal'
   if (eloDiff > 5) favored_side = eloA > eloB ? 'A' : 'B'
