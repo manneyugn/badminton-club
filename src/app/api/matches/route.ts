@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, isAdmin } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { recordSet } from '@/services/matchService'
 import { cacheGet, cacheSet } from '@/lib/cache/memoryCache'
 import { findAllSets } from '@/lib/sheets/repository'
@@ -35,14 +35,22 @@ const RecordSetSchema = z.object({
   return true
 }, { message: 'Singles requires 1 player per side, doubles requires 2' })
 .refine(d => {
-  // Winner's score must equal game_points (or game_points+1/+2 for deuce)
   const winnerScore = d.winner === 'team_a' ? d.score_a : d.score_b
   return winnerScore >= d.game_points
 }, { message: "Winner's score must reach the game_points target" })
+.refine(d => {
+  const winnerScore = d.winner === 'team_a' ? d.score_a : d.score_b
+  const loserScore  = d.winner === 'team_a' ? d.score_b : d.score_a
+  const margin = winnerScore - loserScore
+  // Must win by 2, except deuce caps: 30-29 for 21pt, 21-20 for 15pt
+  const isCap = (d.game_points === 21 && winnerScore === 30 && loserScore === 29)
+             || (d.game_points === 15 && winnerScore === 21 && loserScore === 20)
+  return margin >= 2 || isCap
+}, { message: 'Must win by at least 2 points (deuce rule)' })
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  if (!session || !isAdmin(session.user?.email)) {
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
