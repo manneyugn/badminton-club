@@ -1,17 +1,14 @@
 'use client'
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import type { PlayerRow } from '@/types'
-import { usePlayers } from '@/hooks/usePlayers'
 
 interface Props {
   adminEmails: string[]
-  initialPlayers: PlayerRow[]
+  onPlayerAdded: () => void
 }
 
-export default function AddPlayerButton({ adminEmails, initialPlayers }: Props) {
+export default function AddPlayerButton({ adminEmails, onPlayerAdded }: Props) {
   const { data: session } = useSession()
-  const { players, refresh } = usePlayers(initialPlayers)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -36,7 +33,7 @@ export default function AddPlayerButton({ adminEmails, initialPlayers }: Props) 
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       setOpen(false)
       setName('')
-      await refresh()   // re-fetch fresh player list from API
+      onPlayerAdded()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
     } finally {
@@ -51,11 +48,6 @@ export default function AddPlayerButton({ adminEmails, initialPlayers }: Props) 
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--accent)' }}>
         + Add Player
       </button>
-
-      {/* Live player count updates after adding */}
-      <p className="text-xs text-center mt-1" style={{ color: 'var(--muted)' }}>
-        {players.length} players
-      </p>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4"
