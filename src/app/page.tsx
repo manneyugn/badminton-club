@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { getPlayers } from '@/services/playerService'
+import AddPlayerButton from '@/components/AddPlayerButton'
 
 export const revalidate = 60
+
+const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean)
 
 export default async function LeaderboardPage() {
   const players = await getPlayers()
@@ -12,6 +15,8 @@ export default async function LeaderboardPage() {
       <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
         {players.length} players
       </p>
+
+      <AddPlayerButton adminEmails={adminEmails} />
 
       {players.length === 0 ? (
         <p className="text-center py-16" style={{ color: 'var(--muted)' }}>
