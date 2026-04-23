@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { PlayerRow, HandicapResult } from '@/types'
+import PlayerSelect from './PlayerSelect'
 
 export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
   const [matchType, setMatchType] = useState<'singles' | 'doubles'>('singles')
@@ -14,6 +15,8 @@ export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
 
   const isDoubles = matchType === 'doubles'
   const valid = pA && pB && (!isDoubles || (pA2 && pB2))
+  const all = [pA, pA2, pB, pB2].filter(Boolean)
+
   const btn = (active: boolean) =>
     `flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${active ? 'text-black' : 'opacity-50'}`
 
@@ -31,19 +34,6 @@ export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
       setLoading(false)
     }
   }
-
-  const sel = (value: string, onChange: (v: string) => void, exclude: string[]) => (
-    <select value={value} onChange={e => { onChange(e.target.value); setResult(null) }}
-      className="w-full p-3 rounded-xl text-sm"
-      style={{ background: 'var(--border)', color: value ? 'var(--foreground)' : 'var(--muted)', border: '1px solid var(--border)' }}>
-      <option value="">Select player</option>
-      {players.filter(p => !exclude.includes(p.player_id) || p.player_id === value).map(p => (
-        <option key={p.player_id} value={p.player_id}>{p.name} ({Math.round(p.elo)})</option>
-      ))}
-    </select>
-  )
-
-  const all = [pA, pA2, pB, pB2].filter(Boolean)
 
   return (
     <div className="flex flex-col gap-5">
@@ -72,16 +62,28 @@ export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
       {/* Players */}
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>Team A</p>
-        {sel(pA, v => { setPA(v); setResult(null) }, all.filter(x => x !== pA))}
-        {isDoubles && sel(pA2, v => { setPA2(v); setResult(null) }, all.filter(x => x !== pA2))}
+        <PlayerSelect players={players} value={pA}
+          onChange={v => { setPA(v); setResult(null) }}
+          exclude={all.filter(x => x !== pA)} placeholder="Select player A" />
+        {isDoubles && (
+          <PlayerSelect players={players} value={pA2}
+            onChange={v => { setPA2(v); setResult(null) }}
+            exclude={all.filter(x => x !== pA2)} placeholder="Select player A2" />
+        )}
       </div>
 
       <div className="text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>vs</div>
 
       <div className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>Team B</p>
-        {sel(pB, v => { setPB(v); setResult(null) }, all.filter(x => x !== pB))}
-        {isDoubles && sel(pB2, v => { setPB2(v); setResult(null) }, all.filter(x => x !== pB2))}
+        <PlayerSelect players={players} value={pB}
+          onChange={v => { setPB(v); setResult(null) }}
+          exclude={all.filter(x => x !== pB)} placeholder="Select player B" />
+        {isDoubles && (
+          <PlayerSelect players={players} value={pB2}
+            onChange={v => { setPB2(v); setResult(null) }}
+            exclude={all.filter(x => x !== pB2)} placeholder="Select player B2" />
+        )}
       </div>
 
       <button onClick={calculate} disabled={!valid || loading}
@@ -90,7 +92,6 @@ export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
         {loading ? 'Calculating…' : 'Calculate Handicap'}
       </button>
 
-      {/* Result */}
       {result && (
         <div className="rounded-xl p-5 flex flex-col gap-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -111,8 +112,6 @@ export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
               </p>
             </>
           )}
-
-          {/* Win probabilities */}
           <div className="flex gap-2">
             {[
               { label: 'Team A', prob: result.win_prob_a, elo: result.elo_a },
@@ -126,7 +125,6 @@ export default function HandicapWidget({ players }: { players: PlayerRow[] }) {
               </div>
             ))}
           </div>
-
           <div className="text-center text-xs" style={{ color: 'var(--muted)' }}>
             Confidence: <span className="capitalize">{result.confidence}</span>
           </div>

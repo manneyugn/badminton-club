@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { PlayerRow } from '@/types'
+import PlayerSelect from './PlayerSelect'
 
 const btn = (active: boolean) =>
   `flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${active ? 'text-black' : 'opacity-50'}`
@@ -30,11 +31,13 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
     return null
   })()
 
+  const allSelected = [...teamA.slice(0, playerCount), ...teamB.slice(0, playerCount)].filter(Boolean)
+
   const valid =
     teamA.slice(0, playerCount).every(Boolean) &&
     teamB.slice(0, playerCount).every(Boolean) &&
     winner !== null &&
-    new Set([...teamA.slice(0, playerCount), ...teamB.slice(0, playerCount)]).size === playerCount * 2
+    new Set(allSelected).size === playerCount * 2
 
   async function submit() {
     if (!valid) return
@@ -56,6 +59,10 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
+      setTeamA(['', ''])
+      setTeamB(['', ''])
+      setScoreA('')
+      setScoreB('')
       router.push('/sets')
       router.refresh()
     } catch (e) {
@@ -78,19 +85,6 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
     )
   }
 
-  const select = (value: string, onChange: (v: string) => void, exclude: string[]) => (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      className="w-full p-3 rounded-xl text-sm appearance-none"
-      style={{ background: 'var(--border)', color: value ? 'var(--foreground)' : 'var(--muted)', border: '1px solid var(--border)' }}>
-      <option value="">Select player</option>
-      {players.filter(p => !exclude.includes(p.player_id) || p.player_id === value).map(p => (
-        <option key={p.player_id} value={p.player_id}>{p.name} ({Math.round(p.elo)})</option>
-      ))}
-    </select>
-  )
-
-  const allSelected = [...teamA.slice(0, playerCount), ...teamB.slice(0, playerCount)].filter(Boolean)
-
   return (
     <div className="flex flex-col gap-5">
       {/* Match type */}
@@ -98,7 +92,7 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
         <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--muted)' }}>Type</p>
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
           {(['singles', 'doubles'] as const).map(t => (
-            <button key={t} onClick={() => { setMatchType(t); setTeamA(['','']); setTeamB(['','']) }}
+            <button key={t} onClick={() => { setMatchType(t); setTeamA(['', '']); setTeamB(['', '']) }}
               className={btn(matchType === t)}
               style={{ background: matchType === t ? 'var(--accent)' : 'transparent' }}>
               {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -126,8 +120,16 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
         <div>
           <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--muted)' }}>Team A</p>
           <div className="flex flex-col gap-2">
-            {select(teamA[0], v => setTeamA([v, teamA[1]]), allSelected.filter(x => x !== teamA[0]))}
-            {matchType === 'doubles' && select(teamA[1], v => setTeamA([teamA[0], v]), allSelected.filter(x => x !== teamA[1]))}
+            <PlayerSelect players={players} value={teamA[0]}
+              onChange={v => setTeamA([v, teamA[1]])}
+              exclude={allSelected.filter(x => x !== teamA[0])}
+              placeholder="Select player A" />
+            {matchType === 'doubles' && (
+              <PlayerSelect players={players} value={teamA[1]}
+                onChange={v => setTeamA([teamA[0], v])}
+                exclude={allSelected.filter(x => x !== teamA[1])}
+                placeholder="Select player A2" />
+            )}
           </div>
         </div>
 
@@ -136,8 +138,16 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
         <div>
           <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--muted)' }}>Team B</p>
           <div className="flex flex-col gap-2">
-            {select(teamB[0], v => setTeamB([v, teamB[1]]), allSelected.filter(x => x !== teamB[0]))}
-            {matchType === 'doubles' && select(teamB[1], v => setTeamB([teamB[0], v]), allSelected.filter(x => x !== teamB[1]))}
+            <PlayerSelect players={players} value={teamB[0]}
+              onChange={v => setTeamB([v, teamB[1]])}
+              exclude={allSelected.filter(x => x !== teamB[0])}
+              placeholder="Select player B" />
+            {matchType === 'doubles' && (
+              <PlayerSelect players={players} value={teamB[1]}
+                onChange={v => setTeamB([teamB[0], v])}
+                exclude={allSelected.filter(x => x !== teamB[1])}
+                placeholder="Select player B2" />
+            )}
           </div>
         </div>
       </div>
@@ -166,7 +176,7 @@ export default function RecordSetForm({ players }: { players: PlayerRow[] }) {
       {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
       <button onClick={submit} disabled={!valid || loading}
-        className="w-full py-4 rounded-xl font-bold text-black transition-opacity disabled:opacity-40"
+        className="w-full py-4 rounded-xl font-bold text-black disabled:opacity-40"
         style={{ background: 'var(--accent)' }}>
         {loading ? 'Saving…' : 'Save Set'}
       </button>
